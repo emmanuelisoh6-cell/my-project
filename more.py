@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import pickle
 import os
-from auth import register_user, check_login  # Imports our custom auth functionsstrestream
+from auth import register_user, check_login  
 from pathlib import Path
 
 # DIAGNOSTIC CODE: This will print exactly what is happening in your terminal
@@ -21,6 +21,27 @@ if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
     st.session_state.username = ""
+
+
+# 🌍 Regional Baseline Environmental Database (from ISRIC / FAO profiles)
+STATE_DB = {
+    "Enugu State": {
+        "clay": 0.15, "sand": 0.10, "ph": 5.2, "nitrogen": 1.4, "potassium": 0.12, "phosphorus": 4.0
+    },
+    "Kaduna State": {
+        "clay": 0.14, "sand": 0.08, "ph": 6.1, "nitrogen": 1.1, "potassium": 0.16, "phosphorus": 5.2
+    },
+    "Kano State": {
+        "clay": 0.09, "sand": 0.05, "ph": 6.5, "nitrogen": 0.7, "potassium": 0.20, "phosphorus": 6.0
+    },
+    "Oyo State": {
+        "clay": 0.16, "sand": 0.11, "ph": 5.8, "nitrogen": 1.2, "potassium": 0.14, "phosphorus": 4.5
+    },
+    "Niger State": {
+        "clay": 0.13, "sand": 0.08, "ph": 5.9, "nitrogen": 0.9, "potassium": 0.18, "phosphorus": 5.5
+    }
+}
+
 
 # 🔐 AUTHENTICATION INTERFACE (IF NOT LOGGED IN)
 if not st.session_state.logged_in:
@@ -129,13 +150,18 @@ else:
             potassium = st.number_input("Soil Potassium content (k)", value=0.18)
             phosphorus = st.number_input("Soil Phosphorus content (mg/kg)", value=5.5)
         st.subheader("4. Temporal, Scale & Management Context")
-        col7, col8 = st.columns(2)
+        col7, col8, col9 = st.columns(3)
         with col7:
             Area = st.number_input("Cultivated Area (Hectares)", min_value=0.1, max_value=1000.0, value=1.5)
         # Month Pickers
             Planting_month = st.selectbox("Planting_month", options=list(range(1, 13)), format_func=lambda x: pd.to_datetime(x, format='%m').strftime('%B'))
         with col8:
             Harvest_month = st.selectbox("Expected_Harvest month", options=list(range(1, 13)), format_func=lambda x: pd.to_datetime(x, format='%m').strftime('%B'))
+        with col9:
+            selected_state = st.selectbox("Select Target State", options=list(STATE_DB.keys()))
+            
+            # Fetch the baseline dictionary for the selected region
+            state_defaults = STATE_DB[selected_state]
         FEATURE_COLUMNS = [
             'Year', 'Disaster_occur', 'Planting_month',
             'Harvest_month','Area', 'Avg_rainfall_annually',
@@ -174,3 +200,4 @@ else:
                 st.metric(label="🌲 Random Forest Prediction", value=f"{pred_rf_val:.4f} t/ha")
             with res_col2:
                 st.metric(label="⚡ Gradient Boosting Prediction", value=f"{pred_gb_val:.4f} t/ha")
+                
